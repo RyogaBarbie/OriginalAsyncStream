@@ -1,5 +1,5 @@
 @available(iOS 16, *)
-public struct OriginalAsyncStream<Element>: AsyncSequence {
+public struct  SimpleAsyncThrowingStream<Element>: AsyncSequence {
     public typealias Element = Element
     public typealias AsyncIterator = Iterator
     public typealias TerminationHandler = @Sendable (Terminal) -> Void
@@ -25,7 +25,7 @@ public struct OriginalAsyncStream<Element>: AsyncSequence {
     }
 }
 
-extension OriginalAsyncStream {
+extension  SimpleAsyncThrowingStream {
     public struct Iterator: AsyncIteratorProtocol {
         private let _storage: Storage
 
@@ -39,7 +39,7 @@ extension OriginalAsyncStream {
     }
 }
 
-extension OriginalAsyncStream {
+extension  SimpleAsyncThrowingStream {
     public enum Terminal {
         case finished
         case failed(Error)
@@ -125,7 +125,7 @@ enum OriginalError: Error {
     case somethingHappend
 }
 
-let asyncStream = OriginalAsyncStream<Int>() { terminal in
+let asyncStream =  SimpleAsyncThrowingStream<Int>() { terminal in
     switch terminal {
     case .finished: print("終了しました")
     case .failed(let error):
