@@ -37,17 +37,31 @@ extension OriginalAsyncStream {
 
 extension OriginalAsyncStream {
     actor Storage {
-        var continuations: [CheckedContinuation<Element?, Never>] = []
+        private struct State {
+            var continuation: CheckedContinuation<Element?, Never>? = nil
+            var pending = [Element]()
+        }
+
+        private var state = State()
 
         func next() async -> Element? {
-            return await withCheckedContinuation({ continuation in
-                continuations.append(continuation)
+            return await withCheckedContinuation({ _continuation in
+                if state.pending.count > 0 {
+                    let sendValue = state.pending.removeFirst()
+                    _continuation.resume(returning: sendValue)
+                } else {
+                    state.continuation = _continuation
+                }
             })
         }
 
         func send(_ element: Element) {
-            let continuation = continuations.removeFirst()
-            continuation.resume(returning: element)
+            if let continuation = state.continuation {
+                state.continuation = nil
+                continuation.resume(returning: element)
+            } else {
+                state.pending.append(element)
+            }
         }
 
         func finish() {
@@ -73,20 +87,9 @@ Task.detached {
 
 
 Task.detached {
-    await asyncStream.send(Int.random(in: 0...99))
 
-    try await Task.sleep(nanoseconds: 1)
     await asyncStream.send(Int.random(in: 0...99))
-
-    try await Task.sleep(nanoseconds: 1)
     await asyncStream.send(Int.random(in: 0...99))
-
-    try await Task.sleep(nanoseconds: 1)
+    await asyncStream.send(Int.random(in: 0...99))
     await asyncStream.send(Int.random(in: 0...99))
 }
-
-//Task.detached {
-//    try await Task.sleep(nanoseconds: 1000)
-//    notificationCenter.send(Int.random(in: 0...99))
-//}
-//
